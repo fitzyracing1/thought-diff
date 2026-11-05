@@ -4,10 +4,15 @@ Compare your edits to a **frozen copy of AI-written code**, and see how the
 *interpretation* of each line and of the whole program's structure changes as
 you edit.
 
+**v0.2.0** adds a Cursor / VS Code extension: a side view that shows the thought
+diff and structure diff beside the built-in code diff while you edit. Analysis
+still comes from the Python `thought_diff` library (AST interpretations). It is
+**not regeneration** and **not recovered hidden model thoughts**.
+
 ## What it is
 
 - A frozen reference copy (the AI's original code) and a working copy you edit.
-- `thought_diff` shows three things side by side:
+- `thought_diff` shows three things:
   1. **Code diff** – a normal unified diff, working vs frozen.
   2. **Thought diff** – for each changed line, what the line meant before and what
      it means now (what it does, which function it is in, what it calls, who calls
@@ -24,21 +29,81 @@ you edit.
   reading of the code computed from Python's AST. They are not the original
   model's reasoning and can be wrong or shallow. Check them against the real code
   and tests.
-- Not a GUI editor yet. v0.1.0 is a command-line tool for Python code.
+- **Python-only analysis.** The library walks Python source with the AST. Other
+  languages are not interpreted; non-Python files are ignored for thought/structure
+  views.
 
-## Run it
+## Cursor / VS Code extension (v0.2.0)
 
-Needs Python 3.10+. No dependencies to run; `pytest` for tests.
+The same VSIX installs in Cursor and VS Code. It is **not** published to the VS
+Marketplace or Open VSX — install from a local `.vsix`.
+
+### Install from VSIX in Cursor
+
+1. Build the package (from a clone), or download the `.vsix` from a GitHub Actions
+   artifact / release asset when available:
+   ```bash
+   cd extension
+   npm install
+   npm run package
+   # or: npx --yes @vscode/vsce package --no-dependencies -o thought-diff-0.2.0.vsix
+   ```
+2. In Cursor: **Extensions** view → `…` menu → **Install from VSIX…** → choose
+   `extension/thought-diff-0.2.0.vsix`.
+3. Reload the window if prompted.
+
+### Set the original folder
+
+1. Command Palette → **Thought Diff: Set Original Folder** and pick the frozen
+   AI copy, **or** set `thoughtDiff.originalFolder` in settings.
+2. Optional: set `thoughtDiff.originalGitRef` to a branch/tag/commit instead; the
+   extension runs `git archive` from the workspace root into a temp dir.
+3. Open the **Thought Diff** activity-bar view (or **Thought Diff: Open View**).
+4. Edits refresh the view on save; or run **Thought Diff: Refresh**.
+
+Settings of note:
+
+| Setting | Meaning |
+|---|---|
+| `thoughtDiff.originalFolder` | Absolute path to the frozen original directory |
+| `thoughtDiff.originalGitRef` | Git ref used as original (overrides folder when set) |
+| `thoughtDiff.workingFolder` | Working copy (default: first workspace folder) |
+| `thoughtDiff.pythonPath` | Python executable (default `python3`) |
+
+If Python is missing, the view shows a clear error asking you to install Python
+3.10+ and/or set `thoughtDiff.pythonPath`. The extension sets `PYTHONPATH` to its
+bundled `extension/python` copy of the library.
+
+### Limits (extension)
+
+- Same Python-only AST limits as the CLI.
+- Needs a local Python interpreter; the extension does not ship one.
+- Git-ref originals need `git` on PATH and a workspace that is a git repo.
+- Does not replace the built-in code diff — it sits beside it.
+
+## CLI (unchanged workflow)
+
+Needs Python 3.10+. No runtime dependencies; `pytest` for tests.
 
 ```
 python -m thought_diff compare examples/original examples/working
-python -m thought_diff compare ORIGINAL_DIR WORKING_DIR --exit-code   # exit 1 if anything differs
-python -m thought_diff structure examples/working                      # structure view of one dir
+python -m thought_diff compare ORIGINAL_DIR WORKING_DIR --exit-code
+python -m thought_diff compare ORIGINAL_DIR WORKING_DIR --json   # machine-readable
+python -m thought_diff structure examples/working
 pip install -r requirements.txt && python -m pytest
 ```
 
 A simple workflow: copy the AI's output to `original/` (or keep it on a git
-branch and check it out there), never edit it, edit `working/`, re-run `compare`.
+branch), never edit it, edit `working/`, re-run `compare` or use the extension.
+
+## Packaging the VSIX
+
+```
+cd extension && npm install && npm run package
+```
+
+CI builds the VSIX as a workflow artifact. Do not publish to VS Marketplace /
+Open VSX unless that is decided later.
 
 ## Versioning
 

@@ -14,3 +14,36 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m pytest -v
       - run: python -m thought_diff compare examples/original examples/working
+      - run: python -m thought_diff compare examples/original examples/working --json
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sync bundled Python library
+        run: |
+          mkdir -p extension/python/thought_diff
+          cp thought_diff/__init__.py thought_diff/__main__.py thought_diff/core.py extension/python/thought_diff/
+      - name: Extension unit tests
+        working-directory: extension
+        run: node --test ./src/parse.test.js
+      - name: Smoke Python via extension PYTHONPATH
+        run: |
+          export PYTHONPATH="$PWD/extension/python${PYTHONPATH:+:$PYTHONPATH}"
+          python -m thought_diff compare examples/original examples/working --json | head -c 200
+      - name: Package VSIX
+        working-directory: extension
+        run: |
+          npm install --no-fund --no-audit
+          npx --yes @vscode/vsce package --no-dependencies -o thought-diff-0.2.0.vsix
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: thought-diff-vsix
+          path: extension/thought-diff-0.2.0.vsix

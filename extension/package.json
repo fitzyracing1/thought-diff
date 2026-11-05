@@ -1,0 +1,102 @@
+{
+  "name": "thought-diff",
+  "displayName": "Thought Diff",
+  "description": "Side view of thought + structure diffs versus a frozen original. Uses the Python thought_diff library (AST interpretations, not regeneration or hidden model thoughts).",
+  "version": "0.2.0",
+  "publisher": "fitzyracing1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onView:thoughtDiff.panel",
+    "onCommand:thoughtDiff.refresh",
+    "onCommand:thoughtDiff.setOriginalFolder",
+    "onCommand:thoughtDiff.openView"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "thoughtDiff.refresh",
+        "title": "Thought Diff: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "thoughtDiff.setOriginalFolder",
+        "title": "Thought Diff: Set Original Folder"
+      },
+      {
+        "command": "thoughtDiff.openView",
+        "title": "Thought Diff: Open View"
+      }
+    ],
+    "configuration": {
+      "title": "Thought Diff",
+      "properties": {
+        "thoughtDiff.originalFolder": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the frozen original folder (AI's code copy). Leave empty to be prompted."
+        },
+        "thoughtDiff.originalGitRef": {
+          "type": "string",
+          "default": "",
+          "description": "Optional git ref (branch, tag, or commit) used as the frozen original instead of originalFolder. Resolved with git archive from the workspace root."
+        },
+        "thoughtDiff.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python executable used to run `python -m thought_diff compare`."
+        },
+        "thoughtDiff.workingFolder": {
+          "type": "string",
+          "default": "",
+          "description": "Working copy folder to compare. Empty = first workspace folder."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "thought-diff",
+          "title": "Thought Diff",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "thought-diff": [
+        {
+          "type": "webview",
+          "id": "thoughtDiff.panel",
+          "name": "Thought Diff"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "thoughtDiff.refresh",
+          "when": "view == thoughtDiff.panel",
+          "group": "navigation"
+        },
+        {
+          "command": "thoughtDiff.setOriginalFolder",
+          "when": "view == thoughtDiff.panel"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "package": "vsce package --no-dependencies -o thought-diff-0.2.0.vsix",
+    "package:npx": "npx --yes @vscode/vsce package --no-dependencies -o thought-diff-0.2.0.vsix",
+    "test": "node --test ./src/parse.test.js"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.2.1"
+  }
+}

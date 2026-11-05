@@ -100,3 +100,15 @@ def test_cli_runs_on_examples():
     assert out.returncode == 1
     assert "+ function added: shop:shipping(amount)" in out.stdout
     assert "not recovered thoughts" in out.stdout
+
+
+def test_cli_json_output():
+    out = subprocess.run(
+        [sys.executable, "-m", "thought_diff", "compare",
+         "examples/original", "examples/working", "--json"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert out.returncode == 0
+    data = __import__("json").loads(out.stdout)
+    assert data["empty"] is False
+    assert "disclaimer" in data
+    assert any("shipping" in line for line in data["structure_diff"])
